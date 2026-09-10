@@ -47,6 +47,7 @@ jobs:
           files_yaml: |
             github_actions:
               - .github/workflows/**
+              - action.yaml
             github_actions_ci:
               - .github/workflows/ci.yaml
             pre_commit_config:
