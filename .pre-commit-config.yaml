@@ -3,19 +3,19 @@ default_stages: [pre-commit]
 
 repos:
   - repo: https://github.com/crate-ci/typos
-    rev: d43b6c087ac471e2ea7b8af622ff15f05c0c365b  # frozen: v1.50.1
+    rev: 512fc24f32f44ab01972217aaaf3dc86ec234d53  # frozen: v1.50.2
     hooks:
       - id: typos
         args: ["--force-exclude"]
 
   - repo: https://github.com/rvben/rumdl-pre-commit
-    rev: 2fecbf66b37cc6d7a0d1edddbe164e3d516eee2b  # frozen: v0.2.68
+    rev: e5ecce62dbd84b035277acbba3e2667a49079c0a  # frozen: v0.2.74
     hooks:
       - id: rumdl
         args: ["--fix"]
 
   - repo: https://github.com/tombi-toml/tombi-pre-commit
-    rev: 2ded3bc1d8379b49bfe7415ecea01f52a254c67d  # frozen: v1.5.2
+    rev: 3251597d6d00583a75057ea11da9fcb66a588198  # frozen: v1.5.5
     hooks:
       - id: tombi-format
       - id: tombi-lint
@@ -65,7 +65,7 @@ repos:
       - id: no-commit-to-branch
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: d910b66e2686a3ef6c3f438dec0f63ba3cf8d7ee  # frozen: v4.18.0
+    rev: db073f6e2776db0e634dc8d6c20d4123a1cab086  # frozen: v4.18.1
     hooks:
       - id: commitizen
       - id: commitizen-branch

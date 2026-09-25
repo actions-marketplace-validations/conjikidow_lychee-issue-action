@@ -4,9 +4,11 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
+require_cmd gh
+
 limit=1000
 
-existing=$(mktemp)
+existing="$(mktemp)"
 gh label list --limit "${limit}" --json name --jq '.[].name' >"${existing}"
 
 if [ "$(wc -l <"${existing}")" -ge "${limit}" ]; then

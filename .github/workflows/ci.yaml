@@ -93,7 +93,7 @@ jobs:
 
       - name: Run actionlint (reviewdog)
         if: github.event_name == 'pull_request'
-        uses: reviewdog/action-actionlint@d290e336d5a743810aef4404f757dc862276d2ae # v1.73.4
+        uses: reviewdog/action-actionlint@8b682e1e7e512151d73a6b9449cbff173846226e # v1.74.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
@@ -119,9 +119,9 @@ jobs:
           persist-credentials: false
 
       - name: Run zizmor
-        uses: zizmorcore/zizmor-action@70fb788f84895a7701f5643d103d587e460b5c99 # v0.6.3
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
         with:
-          version: 'v1.30.0'
+          version: 'v1.30.1'
           advanced-security: false
           annotations: true
 
@@ -133,9 +133,9 @@ jobs:
             (github.event_name != 'pull_request' ||
             github.event.pull_request.head.repo.full_name == github.repository)
           }}
-        uses: zizmorcore/zizmor-action@70fb788f84895a7701f5643d103d587e460b5c99 # v0.6.3
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
         with:
-          version: 'v1.30.0'
+          version: 'v1.30.1'
           advanced-security: true
 
   validate-renovate-config:
@@ -162,7 +162,7 @@ jobs:
 
       - name: Validate Renovate config
         run: |
-          npx --yes --package renovate@44.61.6 \
+          npx --yes --package renovate@44.100.0 \
             renovate-config-validator .github/renovate.json5
 
   lint-markdown:
@@ -183,9 +183,9 @@ jobs:
           persist-credentials: false
 
       - name: Lint Markdown
-        uses: rvben/rumdl@5606c5d6cbbfa8d61c2f23206d42aa6457ddd301 # v0.2.68
+        uses: rvben/rumdl@46a49dea9bd46346cd277953983c546b107f90ce # v0.2.74
         with:
-          version: '0.2.68'
+          version: '0.2.74'
           report-type: annotations
 
   lint-json5:
@@ -246,9 +246,9 @@ jobs:
           persist-credentials: false
 
       - name: Install Tombi
-        uses: tombi-toml/setup-tombi@1791db7d23f16faae781ffe74b21dda3d5fd9ff0 # v1.5.2
+        uses: tombi-toml/setup-tombi@ea139001852855a7f1cf30a9b60c71ebb6446a99 # v1.5.5
         with:
-          version: '1.5.2'
+          version: '1.5.5'
 
       - name: Lint TOML
         if: github.event_name != 'pull_request'
@@ -258,7 +258,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f # v1.5.0
         with:
-          reviewdog_version: 'v0.21.0'
+          reviewdog_version: 'v0.21.2'
 
       - name: Lint TOML (reviewdog)
         if: github.event_name == 'pull_request'
@@ -295,7 +295,7 @@ jobs:
 
       - name: Suggest TOML format changes (reviewdog)
         if: github.event_name == 'pull_request'
-        uses: reviewdog/action-suggester@2558ba17e65a9039e73764a73009fc05fef28a46 # v1.24.3
+        uses: reviewdog/action-suggester@4553543bea739d9d503379d786148cfd561de5fa # v1.25.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tool_name: tombi-format
@@ -324,9 +324,9 @@ jobs:
 
       - name: Install uv
         if: github.event_name != 'pull_request'
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
-          version: '0.12.10'
+          version: '0.12.17'
 
       - name: Lint YAML
         if: github.event_name != 'pull_request'
@@ -334,7 +334,7 @@ jobs:
 
       - name: Lint YAML (reviewdog)
         if: github.event_name == 'pull_request'
-        uses: reviewdog/action-yamllint@de68272fdca5f2a961fb309e0d2e13c2eb186d9e # v1.23.1
+        uses: reviewdog/action-yamllint@6803b0dc8f295034a6156b924814053acb2e6f5a # v1.24.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
@@ -401,7 +401,7 @@ jobs:
 
       - name: Run shellcheck (reviewdog)
         if: github.event_name == 'pull_request' && steps.shell-files.outputs.found == 'true'
-        uses: reviewdog/action-shellcheck@0722bbdb0d47f04c1b53b8734d2422ac63a45ec6 # v1.32.1
+        uses: reviewdog/action-shellcheck@a94d585085f1f5215ae65f4de34e7bbd0523d550 # v1.33.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
@@ -422,7 +422,7 @@ jobs:
       - name: Check prek
         uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
         with:
-          prek-version: 'v0.5.2'
+          prek-version: 'v0.5.3'
           extra-args: '--all-files --skip no-commit-to-branch'
 
   check-typos:
@@ -442,7 +442,7 @@ jobs:
 
       - name: Check spelling
         if: github.event_name != 'pull_request'
-        uses: crate-ci/typos@d43b6c087ac471e2ea7b8af622ff15f05c0c365b # v1.50.1
+        uses: crate-ci/typos@512fc24f32f44ab01972217aaaf3dc86ec234d53 # v1.50.2
 
       - name: Check spelling (reviewdog)
         if: github.event_name == 'pull_request'
@@ -470,7 +470,7 @@ jobs:
         uses: commitizen-tools/setup-cz@96c75e6ae9632047f2c9b4025b9dd1624b40de8f # v0.9.1
         with:
           python-version: '3.x'
-          version: '4.18.0'
+          version: '4.18.1'
 
       - name: Lint commit messages on push
         if: github.event_name == 'push'
