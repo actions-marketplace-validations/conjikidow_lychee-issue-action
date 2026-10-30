@@ -1,13 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-# shellcheck disable=SC1091
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 require_cmd jq
 
 records="$(mktemp)"
-jq -c --arg prefix "file://${GITHUB_WORKSPACE}/" --arg root "${GITHUB_WORKSPACE}/" '
+jq --compact-output --arg prefix "file://${GITHUB_WORKSPACE}/" --arg root "${GITHUB_WORKSPACE}/" '
   [
     ((.error_map // {}), (.timeout_map // {})) | to_entries[] | .key as $file | .value[] | {
       url: (.url | if startswith($prefix) then ltrimstr($prefix) else . end),
@@ -23,7 +22,7 @@ jq -c --arg prefix "file://${GITHUB_WORKSPACE}/" --arg root "${GITHUB_WORKSPACE}
       refs: (map({file, line}) | unique),
     })
   | .[]
-' "${REPORT}" >"${records}"
+' "${REPORT}" > "${records}"
 
 write_output 'records' "${records}"
-write_output 'broken' "$(wc -l <"${records}" | tr -d '[:space:]')"
+write_output 'broken' "$(wc -l < "${records}" | tr -d '[:space:]')"

@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# shellcheck disable=SC1091
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 require_cmd gh
@@ -9,8 +8,8 @@ require_cmd jq
 
 label_args=()
 while IFS= read -r name <&3; do
-  label_args+=(--label "$(csv_field "${name}")")
-done 3< <(split_labels "${LABEL},${EXTRA_LABELS}")
+  label_args+=("--label=$(csv_field "${name}")")
+done 3< <(split_labels "${NORMALIZED_LABEL},${EXTRA_LABELS}")
 
 workflow="${GITHUB_WORKFLOW_REF%%@*}"
 report_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/workflows/${workflow##*/}"
@@ -18,7 +17,7 @@ report_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/workflows/${workfl
 blob_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}"
 
 reported_urls="$(mktemp)"
-cut -f2 "${REPORTED}" >"${reported_urls}"
+cut -f2 "${REPORTED}" > "${reported_urls}"
 
 substitute="$(printf '\xEF\xBF\xBD')"
 autolink_pattern='^[a-zA-Z][a-zA-Z0-9+.-]{1,31}://[^[:space:][:cntrl:]<>]+$'
@@ -42,18 +41,18 @@ write_body() {
   fi
 
   local present
-  present="$(jq -r --argjson limit "${refs_limit}" '[.refs[:$limit][].file] | unique[]' <<<"${record}" |
-    while IFS= read -r file; do
-      if [ "$(git -C "${GITHUB_WORKSPACE}" cat-file -t "${GITHUB_SHA}:${file}" 2>/dev/null)" = 'blob' ]; then
+  present="$(jq --raw-output --argjson limit "${refs_limit}" '[.refs[:$limit][].file] | unique[]' <<< "${record}" \
+    | while IFS= read -r file; do
+      if [[ "$(git -C "${GITHUB_WORKSPACE}" cat-file -t "${GITHUB_SHA}:${file}" 2> /dev/null)" == 'blob' ]]; then
         printf '%s\n' "${file}"
       fi
-    done | jq -Rn '[inputs]')"
+    done | jq --null-input --raw-input '[inputs]')"
 
   printf 'A link check with [lychee](https://github.com/lycheeverse/lychee) found this link to be unreachable.\n\n'
   printf '**Link:** %s\n' "${link}"
   printf '**Status:** %s\n\n' "\`${status//\`/${substitute}}\`"
   printf '**Referenced from:**\n\n'
-  jq -r --argjson limit "${refs_limit}" --argjson budget "${budget}" --argjson present "${present}" --arg blob "${blob_url}" '
+  jq --raw-output --arg blob "${blob_url}" --argjson limit "${refs_limit}" --argjson budget "${budget}" --argjson present "${present}" '
     [
       .refs[:$limit][]
       | .file as $file
@@ -72,38 +71,38 @@ write_body() {
     | ((.refs | length) - $kept) as $omitted
     | $lines[:$kept][],
       (if $omitted > 0 then "\nand \($omitted) more." else empty end)
-  ' <<<"${record}"
+  ' <<< "${record}"
   printf '\nSee the [workflow runs](%s) for the latest report.\n' "${report_url}"
   printf '\n<!-- lychee: %s -->\n' "${url}"
 }
 
-created=0
+opened=0
 # The records are read on a dedicated descriptor so that gh keeps its own stdin.
 while IFS= read -r record <&3; do
-  url="$(jq -r '.url' <<<"${record}")"
+  url="$(jq --raw-output '.url' <<< "${record}")"
   if grep -qxF -- "${url}" "${reported_urls}"; then
     continue
   fi
 
-  status="$(jq -r '.status | tostring' <<<"${record}")"
-  budget="$(jq -r --argjson limit "${body_limit}" --argjson overhead "${body_overhead}" \
-    '$limit - $overhead - 2 * (.url | tostring | length) - (.status | tostring | length)' <<<"${record}")"
-  if [ "${budget}" -le 0 ]; then
+  status="$(jq --raw-output '.status | tostring' <<< "${record}")"
+  budget="$(jq --raw-output --argjson limit "${body_limit}" --argjson overhead "${body_overhead}" \
+    '$limit - $overhead - 2 * (.url | tostring | length) - (.status | tostring | length)' <<< "${record}")"
+  if [[ ${budget} -le 0 ]]; then
     log_warn "No issue opened for ${url}: it does not fit in an issue body."
     continue
   fi
 
   body="$(mktemp)"
-  write_body "${record}" "${url}" "${status}" "${budget}" >"${body}"
+  write_body "${record}" "${url}" "${status}" "${budget}" > "${body}"
   # GitHub rejects a title longer than 256 characters.
   title="${TITLE_PREFIX} ${url}"
-  if [ "${#title}" -gt 256 ]; then
+  if [[ ${#title} -gt 256 ]]; then
     title="${title:0:253}..."
   fi
 
-  gh issue create --title "${title}" --body-file "${body}" "${label_args[@]}"
-  created="$((created + 1))"
+  gh issue create --title="${title}" --body-file="${body}" "${label_args[@]}"
+  opened="$((opened + 1))"
   pace_mutation
-done 3<"${RECORDS}"
+done 3< "${RECORDS}"
 
-write_output 'created' "${created}"
+write_output 'opened' "${opened}"

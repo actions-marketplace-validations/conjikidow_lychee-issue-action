@@ -1,16 +1,20 @@
-name: 'Lychee Issue Action'
+name: Lychee Issue Action
 description: 'Track the broken links found by lychee as GitHub issues'
-author: 'conjikidow'
+author: conjikidow
+
+branding:
+  icon: link
+  color: red
 
 inputs:
   report:
     description: 'Path to the report lychee wrote with `--format json`.'
     required: false
-    default: 'lychee/out.json'
+    default: lychee/out.json
   label:
     description: 'Label carried by every issue the action opens, and the key it looks them up by.'
     required: false
-    default: 'links'
+    default: links
   extra-labels:
     description: 'Further labels to apply on creation, separated by commas. Not used for lookup.'
     required: false
@@ -27,74 +31,71 @@ inputs:
 outputs:
   broken:
     description: 'Number of unreachable links in the report.'
-    value: ${{ steps.collect.outputs.broken }}
-  created:
+    value: ${{ steps.collect-broken-links.outputs.broken }}
+  opened:
     description: 'Number of issues opened by this run.'
-    value: ${{ steps.create.outputs.created }}
+    value: ${{ steps.open-issues.outputs.opened }}
   closed:
     description: 'Number of issues closed by this run.'
-    value: ${{ steps.close.outputs.closed }}
+    value: ${{ steps.close-issues.outputs.closed }}
 
 runs:
-  using: 'composite'
+  using: composite
+
   steps:
     - name: Validate inputs
-      id: validate
+      id: validate-inputs
       shell: bash
       env:
         REPORT: ${{ inputs.report }}
         LABEL: ${{ inputs.label }}
-      run: bash "${{ github.action_path }}/src/validate-inputs.sh"
+      run: bash "${GITHUB_ACTION_PATH}/src/validate-inputs.sh"
 
     - name: Collect broken links
-      id: collect
+      id: collect-broken-links
       shell: bash
       env:
         REPORT: ${{ inputs.report }}
-      run: bash "${{ github.action_path }}/src/collect-broken-links.sh"
+      run: bash "${GITHUB_ACTION_PATH}/src/collect-broken-links.sh"
 
-    - name: List the issues already reported
-      id: reported
+    - name: List the reported issues
+      id: list-reported-issues
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         GH_REPO: ${{ github.repository }}
-        LABEL: ${{ steps.validate.outputs.label }}
-      run: bash "${{ github.action_path }}/src/list-reported-issues.sh"
+        NORMALIZED_LABEL: ${{ steps.validate-inputs.outputs.label }}
+      run: bash "${GITHUB_ACTION_PATH}/src/list-reported-issues.sh"
 
-    - name: Create the labels that do not exist yet
-      if: steps.collect.outputs.broken != '0'
+    - name: Create the missing labels
+      if: steps.collect-broken-links.outputs.broken != '0'
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         GH_REPO: ${{ github.repository }}
-        LABEL: ${{ steps.validate.outputs.label }}
         EXTRA_LABELS: ${{ inputs.extra-labels }}
-      run: bash "${{ github.action_path }}/src/ensure-labels.sh"
+        NORMALIZED_LABEL: ${{ steps.validate-inputs.outputs.label }}
+      run: bash "${GITHUB_ACTION_PATH}/src/create-missing-labels.sh"
 
     - name: Open issues for the newly broken links
-      id: create
+      id: open-issues
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         GH_REPO: ${{ github.repository }}
-        RECORDS: ${{ steps.collect.outputs.records }}
-        REPORTED: ${{ steps.reported.outputs.reported }}
-        LABEL: ${{ steps.validate.outputs.label }}
         EXTRA_LABELS: ${{ inputs.extra-labels }}
         TITLE_PREFIX: ${{ inputs.title-prefix }}
-      run: bash "${{ github.action_path }}/src/create-issues.sh"
+        NORMALIZED_LABEL: ${{ steps.validate-inputs.outputs.label }}
+        RECORDS: ${{ steps.collect-broken-links.outputs.records }}
+        REPORTED: ${{ steps.list-reported-issues.outputs.reported }}
+      run: bash "${GITHUB_ACTION_PATH}/src/open-issues.sh"
 
     - name: Close the issues whose links recovered
-      id: close
+      id: close-issues
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         GH_REPO: ${{ github.repository }}
-        RECORDS: ${{ steps.collect.outputs.records }}
-        REPORTED: ${{ steps.reported.outputs.reported }}
-      run: bash "${{ github.action_path }}/src/close-issues.sh"
-
-branding:
-  icon: 'link'
-  color: 'red'
+        RECORDS: ${{ steps.collect-broken-links.outputs.records }}
+        REPORTED: ${{ steps.list-reported-issues.outputs.reported }}
+      run: bash "${GITHUB_ACTION_PATH}/src/close-issues.sh"
